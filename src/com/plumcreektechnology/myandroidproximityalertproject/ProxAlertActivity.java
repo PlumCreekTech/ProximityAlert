@@ -40,16 +40,22 @@ public class ProxAlertActivity extends Activity {
 	private EditText longitudeEditText;
 	private Button findCoordinatesButton;
 	private Button savePointButton;
+	private ProximityIntentReceiver receiver;
+	private MyLocationListener listener;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
+		listener = new MyLocationListener();
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		locationManager.requestLocationUpdates(
 				LocationManager.GPS_PROVIDER,
-				MIN_TIME, MIN_DIST, new MyLocationListener() );
+				MIN_TIME, MIN_DIST, listener);
+		
+
+		receiver = new ProximityIntentReceiver();
 		
 		// initialize view objects
 		latitudeEditText = (EditText) findViewById(R.id.point_latitude);
@@ -101,7 +107,7 @@ public class ProxAlertActivity extends Activity {
 		locationManager.addProximityAlert(latitude, longitude, RADIUS, EXPIRATION, proximityIntent);
 		
 		IntentFilter filter = new IntentFilter(PROX_ALERT_INTENT);
-		registerReceiver(new ProximityIntentReceiver(), filter);
+		registerReceiver(receiver, filter);
 	}
 	
 	/**
@@ -172,6 +178,12 @@ public class ProxAlertActivity extends Activity {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.android_proximity_alert_project, menu);
 		return true;
+	}
+	
+	public void onDestroy(){
+		super.onDestroy();
+		unregisterReceiver(receiver);
+		listener = null;
 	}
 
 }
