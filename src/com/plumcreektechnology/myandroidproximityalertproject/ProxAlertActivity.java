@@ -100,7 +100,7 @@ public class ProxAlertActivity extends Activity {
 	 * @param longitude
 	 */
 	private void addProximityAlert(double latitude, double longitude) {
-		Toast.makeText(this, "inside proximity alert adding method", Toast.LENGTH_LONG).show();
+		// add the latitude and longitude to extras for identification
 		Intent intent = new Intent(PROX_ALERT_INTENT);
 		PendingIntent proximityIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
 		
