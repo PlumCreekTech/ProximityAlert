@@ -2,21 +2,22 @@ package com.plumcreektechnology.myandroidproximityalertproject;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -31,8 +32,6 @@ public class ProxAlertActivity extends Activity {
 	private static final long MIN_TIME = 1000; // milliseconds
 	private static final float RADIUS = 1000; // meters
 	private static final long EXPIRATION = -1; // never expire
-	private static final String POINT_LATITUDE_KEY = "POINT_LATITUDE_KEY";
-	private static final String POINT_LONGITUDE_KEY = "POINT_LONGITUDE_KEY";
 	private static final String PROX_ALERT_INTENT = "com.plumcreektechnology.myandroidproximityalertproject.ProxAlert";
 	private static final NumberFormat nf = new DecimalFormat("##.########");
 	
@@ -47,7 +46,12 @@ public class ProxAlertActivity extends Activity {
 	private MyGeofenceStore storage;
 	private ProximityIntentReceiver receiver;
 	private MyLocationListener listener;
+	private TreeMap<String, MyGeofence> tree;
 	
+	/**
+	 * initialize location listener, location manager, storage, tree, north pole
+	 * as recent, proximity receiver and collect view objects
+	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -58,10 +62,12 @@ public class ProxAlertActivity extends Activity {
 		locationManager.requestLocationUpdates(
 				LocationManager.GPS_PROVIDER,
 				MIN_TIME, MIN_DIST, listener);
-		
+		// initialize important things
 		storage = new MyGeofenceStore(this);
+		tree = new TreeMap<String,MyGeofence>();
+		recent = new MyGeofence("north pole", 0.0, 0.0, (float)0.0, EXPIRATION);
 		receiver = new ProximityIntentReceiver();
-		
+		// TODO fill the tree
 		// initialize view objects
 		nameEditText = (EditText) findViewById(R.id.name);
 		latitudeEditText = (EditText) findViewById(R.id.point_latitude);
@@ -69,6 +75,11 @@ public class ProxAlertActivity extends Activity {
 		radiusEditText = (EditText) findViewById(R.id.radius);
 //		savePointButton = (Button) findViewById(R.id.save_point_button);
 //		removePointButton = (Button) findViewById(R.id.remove_point_button);
+	}
+	
+	public void onStart() {
+		super.onStart();
+		
 	}
 	
 	/**
@@ -84,7 +95,7 @@ public class ProxAlertActivity extends Activity {
 				Float.parseFloat(radiusEditText.getText().toString()),
 				EXPIRATION);
 		// TODO store mygeofence
-		storage.setMyGeofence(geofence.getId(), geofence);
+		tree.put(geofence.getId(), geofence);
 		addProximityAlert(geofence);
 	}
 	
@@ -104,72 +115,51 @@ public class ProxAlertActivity extends Activity {
 		locationManager.addProximityAlert(geofence.getLatitude(),
 				geofence.getLongitude(), geofence.getRadius(),
 				geofence.getExpiration(), proximityIntent);
-		recent = geofence;
+		
+		recent = geofence; // for debugging
+		
 		IntentFilter filter = new IntentFilter(PROX_ALERT_INTENT);
 		registerReceiver(receiver, filter);
 	}
 	
+	/**
+	 * remove a geofence based on name in nameEditText
+	 * @param v
+	 */
 	public void removeMyGeofence(View v){
-		//storage.clearMyGeofence(nameEditText.getText().toString());
-
-		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
-		Editor editor = prefs.edit();
-		editor.remove(POINT_LATITUDE_KEY);
-		editor.remove(POINT_LONGITUDE_KEY);
+		String name = nameEditText.getText().toString();
+		tree.remove(name);
 	}
 	
-//	/**
-//	 * as long as there is a last known location
-//	 * display the coordinates on screen in the
-//	 * EditText objects
-//	 */
-//	private void populateCoordinatesFromLastKnownLocation() {
-//		Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//		if(location!=null) {
-//			latitudeEditText.setText(nf.format(location.getLatitude()));
-//			longitudeEditText.setText(nf.format(location.getLongitude()));
-//		}
-//	}
-	
-//	/**
-//	 * stores latitude and longitude in the shared preferences
-//	 * only accessible by this application
-//	 * @param latitude
-//	 * @param longitude
-//	 */
-//	private void saveCoordinatesInPreferences(float latitude, float longitude) {
-//		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
-//		SharedPreferences.Editor prefsEditor = prefs.edit(); // must make editor to change preferences
-//		prefsEditor.putFloat(POINT_LATITUDE_KEY, latitude);
-//		prefsEditor.putFloat(POINT_LONGITUDE_KEY, longitude);
-//		prefsEditor.commit();
-//	}
+	/**
+	 * remove all geofences in tree
+	 * @param v
+	 */
+	public void removeAllMyGeofence(View v) {
+		tree.clear();
+	}
 	
 	/**
 	 * retrieves a saved location from saved preferences
 	 * @return
 	 */
 	private Location retrieveLocationFromPreferences() {
-		Location location = new Location(recent.getId());
+		Location location = new Location(recent.getId()); // for debugging, actually retrieving from recent
 		location.setLatitude(recent.getLatitude());
 		location.setLongitude(recent.getLongitude());
 		return location;
-//		Location location = new Location("POINT_LOCATION");
-//		location.setLatitude(prefs.getFloat(POINT_LATITUDE_KEY, 0));
-//		location.setLongitude(prefs.getFloat(POINT_LONGITUDE_KEY, 0));
-//		return location;
 	}
 	
 	/**
 	 * every time the location is changed, it toasts
-	 * the distance between the proximity alert point
-	 * and the current location
+	 * the distance between the most recently created
+	 * proximity alert and the current location
 	 * @author devinfrenze
 	 *
 	 */
 	public class MyLocationListener implements LocationListener {
 		public void onLocationChanged(Location location) {
-			Location pointLocation = retrieveLocationFromPreferences();
+			Location pointLocation = retrieveLocationFromPreferences(); // for debugging see above
 			float distance = location.distanceTo(pointLocation);
 			Toast.makeText(ProxAlertActivity.this, "Distance from Point: "+distance, Toast.LENGTH_LONG).show();
 		}
@@ -191,8 +181,29 @@ public class ProxAlertActivity extends Activity {
 		return true;
 	}
 	
+	/**
+	 * store any remaining geofences for next time in case
+	 * this activity is destroyed
+	 */
+	public void onStop() {
+		super.onStop();
+		Iterator<Entry<String, MyGeofence>> it = tree.entrySet().iterator();
+		while (it.hasNext()) {
+			Entry<String, MyGeofence> ent = it.next();
+			storage.setMyGeofence(ent.getKey(), ent.getValue());
+		}
+	}
+	
+	/**
+	 * before program ends, store any existing
+	 * fences in shared preferences
+	 * delete all remaining from the tree
+	 * free the listener and receiver
+	 */
 	public void onDestroy(){
 		super.onDestroy();
+		tree.clear();
+		// clear receiver and listener
 		unregisterReceiver(receiver);
 		listener = null;
 	}

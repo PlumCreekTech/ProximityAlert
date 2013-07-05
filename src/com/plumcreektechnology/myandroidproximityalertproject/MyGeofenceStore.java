@@ -22,7 +22,7 @@ public class MyGeofenceStore {
 	public static final int INVALID_INT_VALUE = -999;
 
 	private final SharedPreferences prefs;
-	private static final String SHARED_PREFERENCES = "SharedPreferences";
+	private static final String SHARED_PREFERENCES = "tree_preferences";
 
 	// create the SharedPreferences storage with private access only
 	public MyGeofenceStore(Context context) {
@@ -78,6 +78,12 @@ public class MyGeofenceStore {
 		editor.remove(getMyGeofenceFieldKey(id, KEY_LONGITUDE));
 		editor.remove(getMyGeofenceFieldKey(id, KEY_RADIUS));
 		editor.remove(getMyGeofenceFieldKey(id, KEY_EXPIRATION_DURATION));
+		editor.commit();
+	}
+	
+	public void clearAllMyGeofence() {
+		Editor editor = prefs.edit();
+		editor.clear();
 		editor.commit();
 	}
 }

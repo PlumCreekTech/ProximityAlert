@@ -1,6 +1,8 @@
 package com.plumcreektechnology.myandroidproximityalertproject;
 
-public class MyGeofence {
+import java.util.Locale;
+
+public class MyGeofence implements Comparable<MyGeofence> {
 
 	private final String id;
 	private final double latitude;
@@ -35,6 +37,11 @@ public class MyGeofence {
 
 	public long getExpiration() {
 		return expiration;
+	}
+
+	@Override
+	public int compareTo(MyGeofence fence) {
+		return id.toLowerCase(Locale.getDefault()).compareTo(fence.getId().toLowerCase());
 	}
 
 }
