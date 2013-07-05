@@ -7,16 +7,14 @@ public class MyGeofence {
 	private final double longitude;
 	private final float radius;
 	private long expiration;
-	private int transition;
 
 	public MyGeofence(String id, double latitude, double longitude,
-			float radius, long expiration, int transition) {
+			float radius, long expiration) {
 		this.id = id;
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.radius = radius;
 		this.expiration = expiration;
-		this.transition = transition;
 	}
 
 	public String getId() {
@@ -37,10 +35,6 @@ public class MyGeofence {
 
 	public long getExpiration() {
 		return expiration;
-	}
-
-	public int getTransition() {
-		return transition;
 	}
 
 }

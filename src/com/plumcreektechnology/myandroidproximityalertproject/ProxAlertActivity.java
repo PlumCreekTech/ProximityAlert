@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -36,10 +37,14 @@ public class ProxAlertActivity extends Activity {
 	private static final NumberFormat nf = new DecimalFormat("##.########");
 	
 	private LocationManager locationManager;
+	private EditText nameEditText;
 	private EditText latitudeEditText;
 	private EditText longitudeEditText;
-	private Button findCoordinatesButton;
+	private EditText radiusEditText;
 	private Button savePointButton;
+	private Button removePointButton;
+	private MyGeofence recent;
+	private MyGeofenceStore storage;
 	private ProximityIntentReceiver receiver;
 	private MyLocationListener listener;
 	
@@ -54,27 +59,16 @@ public class ProxAlertActivity extends Activity {
 				LocationManager.GPS_PROVIDER,
 				MIN_TIME, MIN_DIST, listener);
 		
-
+		storage = new MyGeofenceStore(this);
 		receiver = new ProximityIntentReceiver();
 		
 		// initialize view objects
+		nameEditText = (EditText) findViewById(R.id.name);
 		latitudeEditText = (EditText) findViewById(R.id.point_latitude);
 		longitudeEditText = (EditText) findViewById(R.id.point_longitude);
-		findCoordinatesButton = (Button) findViewById(R.id.find_coordinates_button);
-		savePointButton = (Button) findViewById(R.id.save_point_button);
-		findCoordinatesButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				populateCoordinatesFromLastKnownLocation();
-			}
-		});
-		
-		savePointButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				saveProximityAlertPoint();
-			}
-		});
+		radiusEditText = (EditText) findViewById(R.id.radius);
+//		savePointButton = (Button) findViewById(R.id.save_point_button);
+//		removePointButton = (Button) findViewById(R.id.remove_point_button);
 	}
 	
 	/**
@@ -82,14 +76,16 @@ public class ProxAlertActivity extends Activity {
 	 * if there is no known last location, it aborts
 	 * otherwise, it saves the coordinates in preferences and calls addProximityAlert
 	 */
-	private void saveProximityAlertPoint() {
-		Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		if (location==null) {
-			Toast.makeText(this, "No last known location. Aborting... wait... this is Ohio", Toast.LENGTH_LONG).show();
-			return;
-		}
-		saveCoordinatesInPreferences((float)location.getLatitude(), (float)location.getLongitude());
-		addProximityAlert(location.getLatitude(), location.getLongitude());
+	public void saveMyGeofence(View v) {
+		// TODO get textedit info
+		MyGeofence geofence = new MyGeofence(nameEditText.getText().toString(),
+				Double.parseDouble(latitudeEditText.getText().toString()),
+				Double.parseDouble(longitudeEditText.getText().toString()),
+				Float.parseFloat(radiusEditText.getText().toString()),
+				EXPIRATION);
+		// TODO store mygeofence
+		storage.setMyGeofence(geofence.getId(), geofence);
+		addProximityAlert(geofence);
 	}
 	
 	/**
@@ -99,54 +95,69 @@ public class ProxAlertActivity extends Activity {
 	 * @param latitude
 	 * @param longitude
 	 */
-	private void addProximityAlert(double latitude, double longitude) {
+	private void addProximityAlert(MyGeofence geofence) {
+		Toast.makeText(this, "adding new coordinate", Toast.LENGTH_LONG).show();
 		// add the latitude and longitude to extras for identification
 		Intent intent = new Intent(PROX_ALERT_INTENT);
 		PendingIntent proximityIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
-		
-		locationManager.addProximityAlert(latitude, longitude, RADIUS, EXPIRATION, proximityIntent);
-		
+
+		locationManager.addProximityAlert(geofence.getLatitude(),
+				geofence.getLongitude(), geofence.getRadius(),
+				geofence.getExpiration(), proximityIntent);
+		recent = geofence;
 		IntentFilter filter = new IntentFilter(PROX_ALERT_INTENT);
 		registerReceiver(receiver, filter);
 	}
 	
-	/**
-	 * as long as there is a last known location
-	 * display the coordinates on screen in the
-	 * EditText objects
-	 */
-	private void populateCoordinatesFromLastKnownLocation() {
-		Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		if(location!=null) {
-			latitudeEditText.setText(nf.format(location.getLatitude()));
-			longitudeEditText.setText(nf.format(location.getLongitude()));
-		}
+	public void removeMyGeofence(View v){
+		//storage.clearMyGeofence(nameEditText.getText().toString());
+
+		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
+		Editor editor = prefs.edit();
+		editor.remove(POINT_LATITUDE_KEY);
+		editor.remove(POINT_LONGITUDE_KEY);
 	}
 	
-	/**
-	 * stores latitude and longitude in the shared preferences
-	 * only accessible by this application
-	 * @param latitude
-	 * @param longitude
-	 */
-	private void saveCoordinatesInPreferences(float latitude, float longitude) {
-		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
-		SharedPreferences.Editor prefsEditor = prefs.edit(); // must make editor to change preferences
-		prefsEditor.putFloat(POINT_LATITUDE_KEY, latitude);
-		prefsEditor.putFloat(POINT_LONGITUDE_KEY, longitude);
-		prefsEditor.commit();
-	}
+//	/**
+//	 * as long as there is a last known location
+//	 * display the coordinates on screen in the
+//	 * EditText objects
+//	 */
+//	private void populateCoordinatesFromLastKnownLocation() {
+//		Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//		if(location!=null) {
+//			latitudeEditText.setText(nf.format(location.getLatitude()));
+//			longitudeEditText.setText(nf.format(location.getLongitude()));
+//		}
+//	}
+	
+//	/**
+//	 * stores latitude and longitude in the shared preferences
+//	 * only accessible by this application
+//	 * @param latitude
+//	 * @param longitude
+//	 */
+//	private void saveCoordinatesInPreferences(float latitude, float longitude) {
+//		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
+//		SharedPreferences.Editor prefsEditor = prefs.edit(); // must make editor to change preferences
+//		prefsEditor.putFloat(POINT_LATITUDE_KEY, latitude);
+//		prefsEditor.putFloat(POINT_LONGITUDE_KEY, longitude);
+//		prefsEditor.commit();
+//	}
 	
 	/**
 	 * retrieves a saved location from saved preferences
 	 * @return
 	 */
 	private Location retrieveLocationFromPreferences() {
-		SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
-		Location location = new Location("POINT_LOCATION");
-		location.setLatitude(prefs.getFloat(POINT_LATITUDE_KEY, 0));
-		location.setLongitude(prefs.getFloat(POINT_LONGITUDE_KEY, 0));
+		Location location = new Location(recent.getId());
+		location.setLatitude(recent.getLatitude());
+		location.setLongitude(recent.getLongitude());
 		return location;
+//		Location location = new Location("POINT_LOCATION");
+//		location.setLatitude(prefs.getFloat(POINT_LATITUDE_KEY, 0));
+//		location.setLongitude(prefs.getFloat(POINT_LONGITUDE_KEY, 0));
+//		return location;
 	}
 	
 	/**

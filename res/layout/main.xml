@@ -1,33 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" >
-    
+    android:layout_height="fill_parent"
+    android:layout_marginLeft="25dip"
+    android:layout_marginRight="25dip"
+    android:orientation="vertical" >
     <EditText
-        android:id="@+id/point_latitude"
+        android:id="@+id/name"
+        android:hint="@string/name"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="25dip"
-        android:layout_marginRight="25dip" />
+        android:layout_height="wrap_content" />
+	<EditText
+        android:id="@+id/point_latitude"
+        android:hint="@string/latitude"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
     
     <EditText
         android:id="@+id/point_longitude"
+        android:hint="@string/longitude"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="25dip"
-        android:layout_marginRight="25dip" />
-    
-    <Button 
-        android:id="@+id/find_coordinates_button"
-        android:text="Find Coordinates"
-        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <EditText
+        android:id="@+id/radius"
+        android:hint="@string/radius"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content" />
     
     <Button 
         android:id="@+id/save_point_button"
-        android:text="Save Point"
+        android:text="@string/save_point"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:onClick="saveMyGeofence" />
+    <Button 
+        android:id="@+id/remove_point_button"
+        android:text="@string/remove"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="removeMyGeofence" />
     
 </LinearLayout>

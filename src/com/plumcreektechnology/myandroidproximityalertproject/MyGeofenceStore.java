@@ -11,7 +11,6 @@ public class MyGeofenceStore {
 	public static final String KEY_LONGITUDE = "com.plumcreektechnology.mygeofence.KEY_LONGITUDE";
 	public static final String KEY_RADIUS = "com.plumcreektechnology.mygeofence.KEY_RADIUS";
 	public static final String KEY_EXPIRATION_DURATION = "com.plumcreektechnology.mygeofence.KEY_EXPIRATION_DURATION";
-	public static final String KEY_TRANSITION_TYPE = "com.plumcreektechnology.mygeofence.KEY_TRANSITION_TYPE";
 	// The prefix for flattened geofence keys
 	public static final String KEY_PREFIX = "com.plumcreektechnology.mygeofence.KEY";
 
@@ -43,18 +42,13 @@ public class MyGeofenceStore {
 		long expirationDuration = prefs.getLong(
 				getMyGeofenceFieldKey(id, KEY_EXPIRATION_DURATION),
 				INVALID_LONG_VALUE);
-		int transitionType = prefs
-				.getInt(getMyGeofenceFieldKey(id, KEY_TRANSITION_TYPE),
-						INVALID_INT_VALUE);
 
 		// If none of the values is incorrect, return the object
 		if (lat != INVALID_FLOAT_VALUE && lng != INVALID_FLOAT_VALUE
 				&& radius != INVALID_FLOAT_VALUE
-				&& expirationDuration != INVALID_LONG_VALUE
-				&& transitionType != INVALID_INT_VALUE) {
+				&& expirationDuration != INVALID_LONG_VALUE) {
 			// Return a true MyGeofence object
-			return new MyGeofence(id, lat, lng, radius, expirationDuration,
-					transitionType);
+			return new MyGeofence(id, lat, lng, radius, expirationDuration);
 			// Otherwise, return null.
 		} else {
 			return null;
@@ -75,8 +69,6 @@ public class MyGeofenceStore {
 				geofence.getRadius());
 		editor.putLong(getMyGeofenceFieldKey(id, KEY_EXPIRATION_DURATION),
 				geofence.getExpiration());
-		editor.putInt(getMyGeofenceFieldKey(id, KEY_TRANSITION_TYPE),
-				geofence.getTransition());
 		editor.commit();
 	}
 
@@ -86,7 +78,6 @@ public class MyGeofenceStore {
 		editor.remove(getMyGeofenceFieldKey(id, KEY_LONGITUDE));
 		editor.remove(getMyGeofenceFieldKey(id, KEY_RADIUS));
 		editor.remove(getMyGeofenceFieldKey(id, KEY_EXPIRATION_DURATION));
-		editor.remove(getMyGeofenceFieldKey(id, KEY_TRANSITION_TYPE));
 		editor.commit();
 	}
 }
