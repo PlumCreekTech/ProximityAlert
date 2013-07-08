@@ -9,5 +9,7 @@
     <string name="save_point">save</string>
     <string name="radius">radius</string>
     <string name="remove">remove</string>
+    <string name="autopopulate">autopopulate</string>
+    <string name="autopoopulate">autopoopulate</string>
 
 </resources>

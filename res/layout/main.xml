@@ -39,5 +39,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="removeMyGeofence" />
+    <Button 
+        android:id="@+id/autopopulate"
+        android:text="@string/autopoopulate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="autopopulate" />
+    
+    <TextView
+        android:id="@+id/treeprint"
+        android:hint="I have not been inititalized"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
     
 </LinearLayout>

@@ -3,8 +3,8 @@ package com.plumcreektechnology.myandroidproximityalertproject;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeMap;
 
 import android.app.Activity;
@@ -15,11 +15,13 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 // TODO
@@ -34,6 +36,7 @@ public class ProxAlertActivity extends Activity {
 	private static final long EXPIRATION = -1; // never expire
 	private static final String PROX_ALERT_INTENT = "com.plumcreektechnology.myandroidproximityalertproject.ProxAlert";
 	private static final NumberFormat nf = new DecimalFormat("##.########");
+	private static final String DEFAULT_URI = "https://twitter.com/StealthMountain";
 	
 	private LocationManager locationManager;
 	private EditText nameEditText;
@@ -62,12 +65,22 @@ public class ProxAlertActivity extends Activity {
 		locationManager.requestLocationUpdates(
 				LocationManager.GPS_PROVIDER,
 				MIN_TIME, MIN_DIST, listener);
+		
 		// initialize important things
 		storage = new MyGeofenceStore(this);
-		tree = new TreeMap<String,MyGeofence>();
-		recent = new MyGeofence("north pole", 0.0, 0.0, (float)0.0, EXPIRATION);
+		recent = new MyGeofence("north pole", 90.0, 0.0, (float)0.0, EXPIRATION, DEFAULT_URI);
 		receiver = new ProximityIntentReceiver();
-		// TODO fill the tree
+//		tree = new TreeMap<String,MyGeofence>();
+		
+		// fill the tree
+		tree = storage.getStored();
+		for(Map.Entry<String, MyGeofence> entry : tree.entrySet()){
+			addProximityAlert(entry.getValue());
+		}
+
+		TextView treeprint = (TextView) findViewById(R.id.treeprint);
+		treeprint.setText(tree.toString());
+		
 		// initialize view objects
 		nameEditText = (EditText) findViewById(R.id.name);
 		latitudeEditText = (EditText) findViewById(R.id.point_latitude);
@@ -93,10 +106,14 @@ public class ProxAlertActivity extends Activity {
 				Double.parseDouble(latitudeEditText.getText().toString()),
 				Double.parseDouble(longitudeEditText.getText().toString()),
 				Float.parseFloat(radiusEditText.getText().toString()),
-				EXPIRATION);
+				EXPIRATION, DEFAULT_URI);
 		// TODO store mygeofence
 		tree.put(geofence.getId(), geofence);
 		addProximityAlert(geofence);
+		
+		//textview
+		TextView treeprint = (TextView) findViewById(R.id.treeprint);
+		treeprint.setText(tree.toString());
 	}
 	
 	/**
@@ -107,10 +124,12 @@ public class ProxAlertActivity extends Activity {
 	 * @param longitude
 	 */
 	private void addProximityAlert(MyGeofence geofence) {
-		Toast.makeText(this, "adding new coordinate", Toast.LENGTH_LONG).show();
+		// Toast.makeText(this, "adding new coordinate", Toast.LENGTH_LONG).show();
 		// add the latitude and longitude to extras for identification
 		Intent intent = new Intent(PROX_ALERT_INTENT);
-		PendingIntent proximityIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+		intent.putExtra("POI", geofence.getId());
+		intent.putExtra("URI", geofence.getUri());
+		PendingIntent proximityIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		locationManager.addProximityAlert(geofence.getLatitude(),
 				geofence.getLongitude(), geofence.getRadius(),
@@ -129,6 +148,9 @@ public class ProxAlertActivity extends Activity {
 	public void removeMyGeofence(View v){
 		String name = nameEditText.getText().toString();
 		tree.remove(name);
+		
+		TextView treeprint = (TextView) findViewById(R.id.treeprint);
+		treeprint.setText(tree.toString());
 	}
 	
 	/**
@@ -137,6 +159,18 @@ public class ProxAlertActivity extends Activity {
 	 */
 	public void removeAllMyGeofence(View v) {
 		tree.clear();
+		TextView treeprint = (TextView) findViewById(R.id.treeprint);
+		treeprint.setText("There are no stored geofences.");
+	}
+	
+	public void autopopulate(View v) {
+		MyGeofence geofence = new MyGeofence("bucknam", 42.326895, -71.104342, 200, EXPIRATION, "http://en.wikipedia.org/wiki/Adolph_R._Bucknam");
+		tree.put(geofence.getId(), geofence);
+		addProximityAlert(geofence);
+		
+		//textview
+		TextView treeprint = (TextView) findViewById(R.id.treeprint);
+		treeprint.setText(tree.toString());
 	}
 	
 	/**

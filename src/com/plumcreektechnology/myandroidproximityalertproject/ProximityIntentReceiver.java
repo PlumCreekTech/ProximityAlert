@@ -18,6 +18,8 @@ public class ProximityIntentReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		String key = LocationManager.KEY_PROXIMITY_ENTERING;
 		Boolean entering = intent.getBooleanExtra(key, false);
+		String name = intent.getStringExtra("POI");
+		String uri = intent.getStringExtra("URI");
 		
 		// log enter or exit
 		if(entering) {
@@ -26,9 +28,9 @@ public class ProximityIntentReceiver extends BroadcastReceiver {
 			Log.d(getClass().getSimpleName(), "exiting");
 		}
 		
-		// create a pending intent to be activated from notificaiton
-		Uri uri = Uri.parse("https://twitter.com/StealthMountain");
-		Intent pending = new Intent(Intent.ACTION_VIEW, uri);
+		// create a pending intent to be activated from notification
+//		Uri uri = Uri.parse("https://twitter.com/StealthMountain");
+		Intent pending = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
 		pending.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, pending, 0);
 		
@@ -36,8 +38,8 @@ public class ProximityIntentReceiver extends BroadcastReceiver {
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
 				.setSmallIcon(R.drawable.ic_launcher)
 				.setContentTitle("We did it!")
-				.setContentText("You're near the POI, sort of.")
-				.addAction(R.drawable.ic_launcher, "sneak peek of what's to come", pendingIntent);
+				.setContentText("You're near "+name)
+				.addAction(R.drawable.ic_launcher, "sneak peek", pendingIntent);
 		
 		NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
