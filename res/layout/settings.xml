@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:persistent="false"> >
+    <PreferenceScreen
+        android:key="subScreen"
+        android:title="subScreen"
+        android:persistent="false">
+        <CheckBoxPreference
+            android:id="@+id/checkboxone"
+            android:key="CheckBox"
+            android:defaultValue="true"
+            android:disableDependentsState="true" 
+            android:title="checkbox" />
+        <EditTextPreference
+            android:id="@+id/textEdit"
+            android:defaultValue="enter text"
+            android:key="EditText"
+            android:summary="enter text"
+            android:title="edit text"
+            android:dependency="CheckBox" />
+    </PreferenceScreen>
+    <!-- <ListPreference
+        android:key="List"
+        android:title="List"
+        android:dialogTitle="@string/list_preferences"
+        android:entries="@array/entries"
+        android:entryValues="@array/entries"
+        /> -->
+    <PreferenceCategory 
+        android:key="category"
+        android:title="category">
+      <!--   <MultiSelectListPreference 
+            android:key="multiList"
+        	android:title="multiList"
+        	android:dialogTitle="@string/multilist_preferences"
+        	android:entries="@array/multientries"
+        	android:entryValues="@array/multientries"
+            /> -->
+        <SwitchPreference 
+            android:key="swatch"
+            android:title="swatch"
+            android:defaultValue="true">
+            <intent
+                />
+        </SwitchPreference>
+    </PreferenceCategory>
+</PreferenceScreen>

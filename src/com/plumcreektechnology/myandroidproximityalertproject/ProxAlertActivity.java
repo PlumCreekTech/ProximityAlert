@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import android.app.Activity;
+import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -15,9 +15,10 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,7 +29,7 @@ import android.widget.Toast;
 // make a Proximity Alert class named ProxAlert to be sent as PendingIntent
 // make a Lister class called MyLocationListener()
 
-public class ProxAlertActivity extends Activity {
+public class ProxAlertActivity extends FragmentActivity {
 
 	private static final long MIN_DIST = 1; // meters
 	private static final long MIN_TIME = 1000; // milliseconds
@@ -50,6 +51,9 @@ public class ProxAlertActivity extends Activity {
 	private ProximityIntentReceiver receiver;
 	private MyLocationListener listener;
 	private TreeMap<String, MyGeofence> tree;
+	
+	private String alertName;
+	private String alertUri;
 	
 	/**
 	 * initialize location listener, location manager, storage, tree, north pole
@@ -207,12 +211,38 @@ public class ProxAlertActivity extends Activity {
 		@Override
 		public void onStatusChanged(String s, int i, Bundle b) {}
 	}
+	
+	public String getAlertName() {
+		return alertName;
+	}
+
+	public void setAlertName(String alertName) {
+		this.alertName = alertName;
+	}
+
+	public String getAlertUri() {
+		return alertUri;
+	}
+
+	public void setAlertUri(String alertUri) {
+		this.alertUri = alertUri;
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.android_proximity_alert_project, menu);
 		return true;
+	}
+	
+	public boolean onOptionsItemSelected(MenuItem item){
+		switch(item.getItemId()){
+		case R.id.action_settings:
+			Settings pfrag = new Settings();
+			fragAdder(pfrag);
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 	
 	/**
@@ -240,6 +270,10 @@ public class ProxAlertActivity extends Activity {
 		// clear receiver and listener
 		unregisterReceiver(receiver);
 		listener = null;
+	}
+	
+	public void fragAdder(Fragment frag){
+		getFragmentManager().beginTransaction().add(R.id.parent, frag).commit();
 	}
 
 }
