@@ -39,7 +39,8 @@ public final class R {
     }
     public static final class layout {
         public static final int main=0x7f030000;
-        public static final int settings=0x7f030001;
+        public static final int proxalert=0x7f030001;
+        public static final int settings=0x7f030002;
     }
     public static final class menu {
         public static final int android_proximity_alert_project=0x7f070000;

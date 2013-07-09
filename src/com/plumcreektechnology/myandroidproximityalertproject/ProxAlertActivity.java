@@ -16,10 +16,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -29,7 +28,7 @@ import android.widget.Toast;
 // make a Proximity Alert class named ProxAlert to be sent as PendingIntent
 // make a Lister class called MyLocationListener()
 
-public class ProxAlertActivity extends FragmentActivity {
+public class ProxAlertActivity extends Fragment {
 
 	private static final long MIN_DIST = 1; // meters
 	private static final long MIN_TIME = 1000; // milliseconds
@@ -44,13 +43,15 @@ public class ProxAlertActivity extends FragmentActivity {
 	private EditText latitudeEditText;
 	private EditText longitudeEditText;
 	private EditText radiusEditText;
+	private TextView treeprint;
 	private Button savePointButton;
 	private Button removePointButton;
+	private Button autoButton;
 	private MyGeofence recent;
 	private MyGeofenceStore storage;
-	private ProximityIntentReceiver receiver;
 	private MyLocationListener listener;
 	private TreeMap<String, MyGeofence> tree;
+	private ProximityIntentReceiver receiver;
 	
 	private String alertName;
 	private String alertUri;
@@ -60,43 +61,61 @@ public class ProxAlertActivity extends FragmentActivity {
 	 * as recent, proximity receiver and collect view objects
 	 */
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	public void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
 		
+		//initialize location things
 		listener = new MyLocationListener();
-		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 		locationManager.requestLocationUpdates(
 				LocationManager.GPS_PROVIDER,
 				MIN_TIME, MIN_DIST, listener);
 		
-		// initialize important things
-		storage = new MyGeofenceStore(this);
+		// initialize prox things
+		storage = new MyGeofenceStore(getActivity());
 		recent = new MyGeofence("north pole", 90.0, 0.0, (float)0.0, EXPIRATION, DEFAULT_URI);
 		receiver = new ProximityIntentReceiver();
-//		tree = new TreeMap<String,MyGeofence>();
 		
 		// fill the tree
 		tree = storage.getStored();
 		for(Map.Entry<String, MyGeofence> entry : tree.entrySet()){
 			addProximityAlert(entry.getValue());
 		}
-
-		TextView treeprint = (TextView) findViewById(R.id.treeprint);
-		treeprint.setText(tree.toString());
-		
-		// initialize view objects
-		nameEditText = (EditText) findViewById(R.id.name);
-		latitudeEditText = (EditText) findViewById(R.id.point_latitude);
-		longitudeEditText = (EditText) findViewById(R.id.point_longitude);
-		radiusEditText = (EditText) findViewById(R.id.radius);
-//		savePointButton = (Button) findViewById(R.id.save_point_button);
-//		removePointButton = (Button) findViewById(R.id.remove_point_button);
 	}
 	
-	public void onStart() {
-		super.onStart();
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View v = inflater.inflate(R.layout.proxalert, container, false);
 		
+		// initialize view objects
+		treeprint = (TextView) v.findViewById(R.id.treeprint);
+		treeprint.setText(tree.toString());
+		
+		nameEditText = (EditText) v.findViewById(R.id.name);
+		latitudeEditText = (EditText) v.findViewById(R.id.point_latitude);
+		longitudeEditText = (EditText) v.findViewById(R.id.point_longitude);
+		radiusEditText = (EditText) v.findViewById(R.id.radius);
+		savePointButton = (Button) v.findViewById(R.id.save_point_button);
+		savePointButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				saveMyGeofence(v);			}
+		});
+		
+		removePointButton = (Button) v.findViewById(R.id.remove_point_button);
+		removePointButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				removeMyGeofence(v);			}
+		});
+
+		autoButton = (Button) v.findViewById(R.id.autopopulate);
+		autoButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				autopopulate(v);			}
+		});
+		
+		return v;
 	}
 	
 	/**
@@ -116,7 +135,6 @@ public class ProxAlertActivity extends FragmentActivity {
 		addProximityAlert(geofence);
 		
 		//textview
-		TextView treeprint = (TextView) findViewById(R.id.treeprint);
 		treeprint.setText(tree.toString());
 	}
 	
@@ -133,7 +151,7 @@ public class ProxAlertActivity extends FragmentActivity {
 		Intent intent = new Intent(PROX_ALERT_INTENT);
 		intent.putExtra("POI", geofence.getId());
 		intent.putExtra("URI", geofence.getUri());
-		PendingIntent proximityIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent proximityIntent = PendingIntent.getBroadcast(getActivity(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		locationManager.addProximityAlert(geofence.getLatitude(),
 				geofence.getLongitude(), geofence.getRadius(),
@@ -142,7 +160,7 @@ public class ProxAlertActivity extends FragmentActivity {
 		recent = geofence; // for debugging
 		
 		IntentFilter filter = new IntentFilter(PROX_ALERT_INTENT);
-		registerReceiver(receiver, filter);
+		getActivity().registerReceiver(receiver, filter);
 	}
 	
 	/**
@@ -153,7 +171,6 @@ public class ProxAlertActivity extends FragmentActivity {
 		String name = nameEditText.getText().toString();
 		tree.remove(name);
 		
-		TextView treeprint = (TextView) findViewById(R.id.treeprint);
 		treeprint.setText(tree.toString());
 	}
 	
@@ -163,7 +180,6 @@ public class ProxAlertActivity extends FragmentActivity {
 	 */
 	public void removeAllMyGeofence(View v) {
 		tree.clear();
-		TextView treeprint = (TextView) findViewById(R.id.treeprint);
 		treeprint.setText("There are no stored geofences.");
 	}
 	
@@ -173,7 +189,6 @@ public class ProxAlertActivity extends FragmentActivity {
 		addProximityAlert(geofence);
 		
 		//textview
-		TextView treeprint = (TextView) findViewById(R.id.treeprint);
 		treeprint.setText(tree.toString());
 	}
 	
@@ -199,7 +214,7 @@ public class ProxAlertActivity extends FragmentActivity {
 		public void onLocationChanged(Location location) {
 			Location pointLocation = retrieveLocationFromPreferences(); // for debugging see above
 			float distance = location.distanceTo(pointLocation);
-			Toast.makeText(ProxAlertActivity.this, "Distance from Point: "+distance, Toast.LENGTH_LONG).show();
+			Toast.makeText(getActivity(), "Distance from Point: "+distance, Toast.LENGTH_LONG).show();
 		}
 
 		@Override
@@ -227,23 +242,6 @@ public class ProxAlertActivity extends FragmentActivity {
 	public void setAlertUri(String alertUri) {
 		this.alertUri = alertUri;
 	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.android_proximity_alert_project, menu);
-		return true;
-	}
-	
-	public boolean onOptionsItemSelected(MenuItem item){
-		switch(item.getItemId()){
-		case R.id.action_settings:
-			Settings pfrag = new Settings();
-			fragAdder(pfrag);
-		default:
-			return super.onOptionsItemSelected(item);
-		}
-	}
 	
 	/**
 	 * store any remaining geofences for next time in case
@@ -268,12 +266,8 @@ public class ProxAlertActivity extends FragmentActivity {
 		super.onDestroy();
 		tree.clear();
 		// clear receiver and listener
-		unregisterReceiver(receiver);
+		getActivity().unregisterReceiver(receiver);
 		listener = null;
-	}
-	
-	public void fragAdder(Fragment frag){
-		getFragmentManager().beginTransaction().add(R.id.parent, frag).commit();
 	}
 
 }
